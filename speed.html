@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speed Racer | PlayZone</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 24px 14px;
+    min-height: 100vh;
+    color: #f5f7ff;
+    background:
+        radial-gradient(ellipse at top, #263568 0%, #101429 50%, #080b16 100%);
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.game-shell {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+}
+
+.logo {
+    color: #42f5ef;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 5px;
+}
+
+h1 {
+    margin: 8px 0;
+    font-size: clamp(30px, 8vw, 44px);
+    font-style: italic;
+    font-weight: 900;
+    text-shadow: 0 0 22px #00d9ff70;
+}
+
+.subtitle {
+    color: #aab8db;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.stat {
+    background: #1b2341;
+    border: 1px solid #34416b;
+    padding: 12px 5px;
+    border-radius: 13px;
+}
+
+.stat small {
+    display: block;
+    color: #9daed6;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.stat strong {
+    font-size: 21px;
+    color: #42f5ef;
+}
+
+.track {
+    padding: 8px;
+    border: 1px solid #465a8b;
+    border-radius: 18px;
+    background: #161d36;
+    box-shadow: 0 0 30px #08c7ff20;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 11px;
+    background: #202a30;
+}
+
+.instructions {
+    color: #b8c5e5;
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 16px 0;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+}
+
+button {
+    border: 1px solid #5268a3;
+    border-radius: 13px;
+    padding: 13px 22px;
+    color: white;
+    background: #252f54;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+}
+
+.controls button {
+    min-width: 125px;
+}
+
+button:hover {
+    filter: brightness(1.2);
+}
+
+#restart {
+    margin-top: 14px;
+    width: 100%;
+    background: linear-gradient(100deg, #6246ea, #a63eff);
+    border: none;
+    box-shadow: 0 5px 20px #7548f444;
+}
+
+.footer {
+    margin-top: 22px;
+    color: #8290b4;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+<div class="game-shell">
+
+    <div class="logo">PLAYZONE ORIGINAL</div>
+    <h1>🏁 SPEED RACER</h1>
+    <div class="subtitle">DODGE TRAFFIC. COLLECT COINS. BE A LEGEND.</div>
+
+    <div class="stats">
+        <div class="stat">
+            <small>SCORE</small>
+            <strong id="score">0</strong>
+        </div>
+        <div class="stat">
+            <small>🪙 COINS</small>
+            <strong id="coins">0</strong>
+        </div>
+        <div class="stat">
+            <small>❤️ LIVES</small>
+            <strong id="lives">❤️❤️❤️</strong>
+        </div>
+    </div>
+
+    <div class="track">
+        <canvas id="game" width="420" height="600"></canvas>
+    </div>
+
+    <div class="instructions">
+        Keyboard: ← → or A / D to steer<br>
+        Mobile: hold the left and right buttons<br>
+        Collect gold coins and avoid other cars!
+    </div>
+
+    <div class="controls">
+        <button id="left">⬅ LEFT</button>
+        <button id="right">RIGHT ➡</button>
+    </div>
+
+    <button id="restart">🔄 RESTART RACE</button>
+
+    <div class="footer">PLAYZONE • DRIVE YOUR OWN ADVENTURE</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreText = document.getElementById("score");
+const coinsText = document.getElementById("coins");
+const livesText = document.getElementById("lives");
+
+const roadLeft = 48;
+const roadRight = 372;
+const carWidth = 42;
+const carHeight = 68;
+const lanes = [88, 169, 251, 332];
+const colors = ["#ff5368", "#ffb52e", "#a58bff", "#ff78bd"];
+
+let player, traffic, pickups;
+let score, coinCount, lives, best;
+let roadOffset, spawnTimer, coinTimer, lastTime;
+let invincibleUntil, gameOver, leftPressed, rightPressed;
+let animationId;
+
+try {
+    best = Number(localStorage.getItem("playzone-speed-best")) || 0;
+} catch {
+    best = 0;
+}
+
+function restartGame() {
+    if (animationId) cancelAnimationFrame(animationId);
+
+    player = {
+        x: lanes[1] - carWidth / 2,
+        y: 490,
+        speed: 5.5
+    };
+
+    traffic = [];
+    pickups = [];
+    score = 0;
+    coinCount = 0;
+    lives = 3;
+    roadOffset = 0;
+    spawnTimer = 0;
+    coinTimer = 0;
+    lastTime = 0;
+    invincibleUntil = 0;
+    gameOver = false;
+    leftPressed = false;
+    rightPressed = false;
+
+    updateStats();
+    animationId = requestAnimationFrame(loop);
+}
+
+function updateStats() {
+    scoreText.textContent = Math.floor(score);
+    coinsText.textContent = coinCount;
+    livesText.textContent = "❤️".repeat(lives) + "🖤".repeat(3 - lives);
+}
+
+function roundedRect(x, y, w, h, radius, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, radius);
+    ctx.fill();
+}
+
+function drawCar(x, y, color, isPlayer = false) {
+    // Wheels
+    roundedRect(x - 4, y + 10, 8, 20, 3, "#090d17");
+    roundedRect(x + carWidth - 4, y + 10, 8, 20, 3, "#090d17");
+    roundedRect(x - 4, y + 42, 8, 20, 3, "#090d17");
+    roundedRect(x + carWidth - 4, y + 42, 8, 20, 3, "#090d17");
+
+    // Body and body highlights
+    roundedRect(x, y, carWidth, carHeight, 10, color);
+    roundedRect(x + 5, y + 4, carWidth - 10, 4, 2, "#ffffff80");
+
+    // Windows
+    roundedRect(x + 7, y + 13, carWidth - 14, 19, 5, "#a7e6f8");
+    roundedRect(x + 8, y + 39, carWidth - 16, 11, 4, "#26344e");
+
+    if (isPlayer) {
+        // Neon stripe on your car
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x + 19, y + 33, 4, 26);
+
+        // Front lights
+        roundedRect(x + 4, y + 2, 8, 5, 2, "#b9ffff");
+        roundedRect(x + carWidth - 12, y + 2, 8, 5, 2, "#b9ffff");
+    } else {
+        roundedRect(x + 4, y + carHeight - 7, 8, 4, 2, "#ff334c");
+        roundedRect(x + carWidth - 12, y + carHeight - 7, 8, 4, 2, "#ff334c");
+    }
+}
+
+function spawnCar() {
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+    traffic.push({
+        x: lane - carWidth / 2,
+        y: -carHeight,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speed: 3 + Math.random() * 1.3 + Math.min(score / 600, 2)
+    });
+}
+
+function overlaps(a, b) {
+    return a.x + 6 < b.x + b.w - 6 &&
+           a.x + carWidth - 6 > b.x + 6 &&
+           a.y + 8 < b.y + b.h - 8 &&
+           a.y + carHeight - 8 > b.y + 8;
+}
+
+function collectCoin(coin) {
+    const dx = player.x + carWidth / 2 - coin.x;
+    const dy = player.y + carHeight / 2 - coin.y;
+    return Math.sqrt(dx * dx + dy * dy) < 34;
+}
+
+function update(delta, now) {
+    const step = Math.min(delta / 16.67, 2);
+    const speed = 4.8 + Math.min(score / 180, 3.5);
+
+    if (leftPressed) player.x -= player.speed * step;
+    if (rightPressed) player.x += player.speed * step;
+
+    player.x = Math.max(
+        roadLeft + 6,
+        Math.min(roadRight - carWidth - 6, player.x)
+    );
+
+    roadOffset = (roadOffset + speed * step) % 100;
+
+    spawnTimer += delta;
+    const carInterval = Math.max(430, 1050 - score * 1.5);
+
+    if (spawnTimer >= carInterval) {
+        spawnCar();
+        spawnTimer = 0;
+    }
+
+    coinTimer += delta;
+
+    if (coinTimer >= 1100) {
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
+        pickups.push({x: lane, y: -18, rotation: 0});
+        coinTimer = 0;
+    }
+
+    for (const car of traffic) {
+        car.y += car.speed * step;
+    }
+
+    traffic = traffic.filter(car => car.y < 630);
+
+    if (now > invincibleUntil) {
+        for (const car of traffic) {
+            if (overlaps(
+                player,
+                {x: car.x, y: car.y, w: carWidth, h: carHeight}
+            )) {
+                lives--;
+                invincibleUntil = now + 1100;
+
+                // Remove the car that was hit.
+                car.y = 650;
+
+                if (lives <= 0) {
+                    lives = 0;
+                    gameOver = true;
+                    try {
+                        if (score > best) {
+                            best = Math.floor(score);
+                            localStorage.setItem(
+                                "playzone-speed-best", best
+                            );
+                        }
+                    } catch {}
+                }
+                break;
+            }
+        }
+    }
+
+    for (const coin of pickups) {
+        coin.y += speed * step;
+        coin.rotation += 0.08 * step;
+
+        if (!coin.collected && collectCoin(coin)) {
+            coin.collected = true;
+            coinCount++;
+            score += 35;
+        }
+    }
+
+    pickups = pickups.filter(c => !c.collected && c.y < 630);
+    score += delta * 0.012;
+    updateStats();
+}
+
+function drawCoin(coin) {
+    ctx.save();
+    ctx.translate(coin.x, coin.y);
+    ctx.rotate(Math.sin(coin.rotation) * 0.15);
+
+    ctx.shadowColor = "#ffcc38";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#ffbd28";
+    ctx.beginPath();
+    ctx.arc(0, 0, 13, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#fff0a0";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#a86600";
+    ctx.font = "bold 15px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("$", 0, 1);
+
+    ctx.restore();
+}
+
+function draw(now) {
+    // Grass
+    ctx.fillStyle = "#123c36";
+    ctx.fillRect(0, 0, 420, 600);
+
+    // Decorative road-side lights
+    for (let i = 0; i < 9; i++) {
+        const y = (i * 100 + roadOffset) % 700 - 60;
+
+        ctx.fillStyle = "#26645c";
+        ctx.beginPath();
+        ctx.arc(22, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(398, y + 45, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#42f5ef";
+        ctx.fillRect(34, y, 3, 28);
+        ctx.fillRect(383, y + 45, 3, 28);
+    }
+
+    // Road
+    ctx.fillStyle = "#222938";
+    ctx.fillRect(roadLeft, 0, roadRight - roadLeft, 600);
+
+    // Glowing edges
+    ctx.fillStyle = "#42f5ef";
+    ctx.fillRect(roadLeft, 0, 3, 600);
+    ctx.fillRect(roadRight - 3, 0, 3, 600);
+
+    // Road-edge dashes
+    ctx.fillStyle = "#91a2b6";
+    for (let y = -80 + roadOffset; y < 620; y += 100) {
+        ctx.fillRect(roadLeft + 8, y, 3, 38);
+        ctx.fillRect(roadRight - 11, y, 3, 38);
+    }
+
+    // Lane markings
+    ctx.fillStyle = "#c4d0dc";
+    for (let y = -70 + roadOffset; y < 620; y += 100) {
+        ctx.fillRect(129, y, 3, 42);
+        ctx.fillRect(210, y, 3, 42);
+        ctx.fillRect(291, y, 3, 42);
+    }
+
+    // Coins and traffic
+    pickups.forEach(drawCoin);
+    traffic.forEach(car => drawCar(car.x, car.y, car.color));
+
+    // Blink briefly after a crash
+    if (now > invincibleUntil || Math.floor(now / 100) % 2 === 0) {
+        ctx.save();
+        ctx.shadowColor = "#42f5ef";
+        ctx.shadowBlur = 16;
+        drawCar(player.x, player.y, "#13d9e9", true);
+        ctx.restore();
+    }
+
+    if (gameOver) {
+        ctx.fillStyle = "#070b19e8";
+        ctx.fillRect(25, 200, 370, 195);
+
+        ctx.strokeStyle = "#42f5ef";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(25, 200, 370, 195);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ff6278";
+        ctx.font = "900 32px Arial";
+        ctx.fillText("RACE OVER!", 210, 250);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Score: " + Math.floor(score), 210, 292);
+
+        ctx.fillStyle = "#42f5ef";
+        ctx.font = "16px Arial";
+        ctx.fillText("Best: " + best, 210, 324);
+
+        ctx.fillStyle = "#c4cce0";
+        ctx.font = "14px Arial";
+        ctx.fillText("Press RESTART RACE below", 210, 357);
+    }
+}
+
+function loop(timestamp) {
+    const delta = lastTime ? timestamp - lastTime : 16.67;
+    lastTime = timestamp;
+
+    if (!gameOver) update(delta, timestamp);
+    draw(timestamp);
+
+    if (!gameOver) {
+        animationId = requestAnimationFrame(loop);
+    }
+}
+
+function setHoldButton(id, direction) {
+    const button = document.getElementById(id);
+
+    function release() {
+        if (direction === "left") leftPressed = false;
+        else rightPressed = false;
+    }
+
+    button.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        if (direction === "left") leftPressed = true;
+        else rightPressed = true;
+    });
+
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointerleave", release);
+    button.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
+}
+
+setHoldButton("left", "left");
+setHoldButton("right", "right");
+
+document.addEventListener("keydown", event => {
+    if (["ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(event.code)) {
+        event.preventDefault();
+    }
+
+    if (event.code === "ArrowLeft" || event.code === "KeyA") {
+        leftPressed = true;
+    }
+    if (event.code === "ArrowRight" || event.code === "KeyD") {
+        rightPressed = true;
+    }
+});
+
+document.addEventListener("keyup", event => {
+    if (event.code === "ArrowLeft" || event.code === "KeyA") {
+        leftPressed = false;
+    }
+    if (event.code === "ArrowRight" || event.code === "KeyD") {
+        rightPressed = false;
+    }
+});
+
+window.addEventListener("blur", () => {
+    leftPressed = false;
+    rightPressed = false;
+});
+
+document.getElementById("restart").addEventListener("click", restartGame);
+
+restartGame();
+</script>
+</body>
+</html>
