@@ -3,310 +3,206 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ninja Quest - PlayZone</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Ninja Quest | PlayZone</title>
 <style>
-    * { box-sizing: border-box; }
-    body {
-        margin: 0;
-        padding: 20px;
-        background: #101827;
-        color: white;
-        font-family: Arial, sans-serif;
-        text-align: center;
-    }
-    h1 { color: #00e5ff; margin-bottom: 8px; }
-    .info { margin: 12px; color: #dce5f5; }
-    canvas {
-        width: 100%;
-        max-width: 900px;
-        background: #b8e9ff;
-        border: 3px solid #00e5ff;
-        border-radius: 12px;
-        display: block;
-        margin: 15px auto;
-    }
-    button {
-        padding: 12px 22px;
-        border: 0;
-        border-radius: 10px;
-        background: #7048ff;
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 5px;
-    }
-    button:hover { background: #8a6bff; }
+*{box-sizing:border-box}
+body{margin:0;background:#101329;color:white;font-family:Arial,sans-serif;text-align:center}
+header{padding:15px;background:#191d3c;border-bottom:2px solid #7c5cff}
+header a{color:#b9a8ff;text-decoration:none}
+h1{margin:8px;font-size:clamp(25px,6vw,38px)}
+.subtitle{color:#c6c8e8;margin:8px}
+.game-wrap{width:min(94%,850px);margin:18px auto}
+.stats{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap;margin:12px 0}
+.stat{background:#20264a;padding:10px 16px;border-radius:12px;font-weight:bold}
+canvas{display:block;width:100%;height:auto;background:#a9e7ff;border:3px solid #7660ff;border-radius:15px;touch-action:none}
+.help{color:#c6c8e8;font-size:14px;line-height:1.6}
+button{border:0;border-radius:12px;background:#7657ff;color:white;padding:13px 20px;font-size:16px;font-weight:bold;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.96)}
+.controls{display:flex;justify-content:center;align-items:center;gap:14px;margin:15px auto;max-width:420px}
+.controls button{flex:1;min-height:60px;font-size:23px;user-select:none;-webkit-user-select:none}
+#jump{background:#ff704f}
+#message{font-weight:bold;min-height:25px;margin:10px}
+footer{padding:20px;color:#aeb2d9}
+@media(max-width:480px){.game-wrap{width:96%;margin:10px auto}.stat{padding:8px 10px;font-size:14px}.controls{gap:10px}.controls button{min-height:65px;padding:10px}}
 </style>
 </head>
 <body>
+<header>
+  <a href="index.html">← Back to PlayZone</a>
+  <h1>🥷 Ninja Quest</h1>
+  <p class="subtitle">Run, jump, collect coins and avoid obstacles!</p>
+</header>
 
-<h1>🥷 Ninja Quest</h1>
-<p class="info">Collect the coins, avoid the spikes, and reach the flag!</p>
-<p class="info">
-    Coins: <span id="score">0</span> |
-    Move: A/D or ←/→ |
-    Jump: W, ↑ or Space
-</p>
+<main class="game-wrap">
+  <div class="stats">
+    <div class="stat">⭐ Score: <span id="score">0</span></div>
+    <div class="stat">🪙 Coins: <span id="coins">0</span></div>
+    <div class="stat">❤️ Lives: <span id="lives">3</span></div>
+  </div>
 
-<canvas id="game" width="900" height="450"></canvas>
+  <canvas id="game" width="800" height="400" aria-label="Ninja running game"></canvas>
 
-<button onclick="restartGame()">🔄 Restart Game</button>
-<p id="status">Ready, ninja? Use your keyboard to start!</p>
+  <div class="controls">
+    <button id="left" aria-label="Move left">⬅️</button>
+    <button id="jump" aria-label="Jump">⬆️ JUMP</button>
+    <button id="right" aria-label="Move right">➡️</button>
+  </div>
+
+  <button id="restart">🔄 Restart Game</button>
+  <p id="message">Press Start Game to begin!</p>
+  <p class="help">Computer: ← → to move, Space or ↑ to jump.<br>Mobile: use the on-screen buttons.</p>
+</main>
+<footer>PlayZone 🎮 · Keep practicing, ninja!</footer>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const scoreText = document.getElementById("score");
-const statusText = document.getElementById("status");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const scoreEl=document.getElementById("score");
+const coinsEl=document.getElementById("coins");
+const livesEl=document.getElementById("lives");
+const message=document.getElementById("message");
 
-const worldWidth = 2400;
-const gravity = 0.65;
+const W=800,H=400,ground=340;
+let player,obstacles,coins,score,coinCount,lives,speed,frame,running,started,keys,raf;
 
-const platforms = [
-    {x:0, y:390, w:400, h:60},
-    {x:480, y:350, w:250, h:100},
-    {x:790, y:310, w:220, h:140},
-    {x:1080, y:370, w:300, h:80},
-    {x:1450, y:330, w:230, h:120},
-    {x:1750, y:285, w:220, h:165},
-    {x:2040, y:360, w:360, h:90}
-];
+function reset(){
+  if(raf)cancelAnimationFrame(raf);
+  player={x:100,y:ground-48,w:34,h:48,vy:0,onGround:true};
+  obstacles=[];coins=[];score=0;coinCount=0;lives=3;speed=5;frame=0;
+  running=true;started=true;keys={left:false,right:false};
+  scoreEl.textContent=score;coinsEl.textContent=coinCount;livesEl.textContent=lives;
+  message.textContent="Go, ninja! Collect coins and dodge obstacles!";
+  raf=requestAnimationFrame(loop);
+}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h)}
+function draw(){
+  // Sky and distant hills
+  let sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#8ce1ff");sky.addColorStop(1,"#f0fcff");
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#8fd69a";
+  ctx.beginPath();ctx.moveTo(0,270);
+  for(let x=0;x<=W;x+=80)ctx.lineTo(x,245+Math.sin(x/70+frame/100)*22);
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+  rect(0,ground,W,H-ground,"#344b40");
+  rect(0,ground,W,7,"#78e08f");
+  for(let x=-(frame*speed*.5%50);x<W;x+=50)rect(x,ground+25,24,4,"#506c53");
 
-const startingCoins = [
-    {x:180, y:330},
-    {x:330, y:310},
-    {x:550, y:290},
-    {x:660, y:290},
-    {x:850, y:250},
-    {x:960, y:250},
-    {x:1170, y:320},
-    {x:1320, y:320},
-    {x:1510, y:270},
-    {x:1620, y:270},
-    {x:1820, y:225},
-    {x:1920, y:225},
-    {x:2130, y:310},
-    {x:2260, y:310}
-];
+  // Coins
+  coins.forEach(c=>{
+    ctx.fillStyle="#ffcb35";ctx.beginPath();ctx.arc(c.x,c.y,11,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#fff3a0";ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle="#986000";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText("$",c.x,c.y+5);
+  });
 
-let player, coins, score, cameraX, gameOver, won;
-const keys = {};
+  // Obstacles
+  obstacles.forEach(o=>{
+    rect(o.x,o.y,o.w,o.h,"#e85d75");
+    rect(o.x+5,o.y+5,o.w-10,7,"#ffb2b9");
+    ctx.fillStyle="#6d2646";
+    ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(o.x+o.w/2,o.y-13);ctx.lineTo(o.x+o.w,o.y);ctx.fill();
+  });
 
-function restartGame() {
-    player = {
-        x: 50, y: 320, w: 34, h: 42,
-        vx: 0, vy: 0, grounded: false
-    };
-    coins = startingCoins.map(c => ({...c, collected:false}));
-    score = 0;
-    cameraX = 0;
-    gameOver = false;
-    won = false;
-    scoreText.textContent = score;
-    statusText.textContent = "Collect coins and find the flag!";
+  // Ninja body
+  rect(player.x+8,player.y+17,20,27,"#29264f");
+  rect(player.x+3,player.y+21,8,18,"#7657ff");
+  rect(player.x+7,player.y+2,25,22,"#24223f");
+  rect(player.x+4,player.y+9,30,8,"#f3f3ff");
+  rect(player.x+20,player.y+11,7,4,"#ffcb35");
+  rect(player.x+10,player.y+42,7,9,"#16172a");
+  rect(player.x+23,player.y+42,7,9,"#16172a");
+  rect(player.x+1,player.y+5,12,6,"#e85d75");
+
+  if(!running){
+    rect(0,0,W,H,"rgba(15,18,42,.65)");
+    ctx.textAlign="center";ctx.fillStyle="white";
+    ctx.font="bold 42px Arial";ctx.fillText(lives===0?"GAME OVER!":"NINJA QUEST",W/2,170);
+    ctx.font="bold 23px Arial";ctx.fillText("Score: "+score+"   Coins: "+coinCount,W/2,215);
+    ctx.font="18px Arial";ctx.fillText("Tap Restart Game to play again",W/2,255);
+  }
+}
+function spawn(){
+  if(frame%75===0){
+    obstacles.push({x:W+20,y:ground-34,w:30,h:34});
+  }
+  if(frame%95===0){
+    coins.push({x:W+10,y:ground-75-Math.random()*75,r:11});
+  }
+}
+function overlap(a,b){
+  return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+}
+function loop(){
+  if(!running){draw();return}
+  frame++;score++;speed=5+Math.min(score/500,4);
+  if(keys.left)player.x-=4;
+  if(keys.right)player.x+=4;
+  player.x=Math.max(0,Math.min(W-player.w,player.x));
+  player.y+=player.vy;
+  player.vy+=.65;
+  if(player.y+player.h>=ground){player.y=ground-player.h;player.vy=0;player.onGround=true}
+  spawn();
+
+  obstacles.forEach(o=>o.x-=speed);
+  coins.forEach(c=>c.x-=speed);
+
+  obstacles=obstacles.filter(o=>o.x+o.w>0);
+  coins=coins.filter(c=>c.x+12>0);
+
+  obstacles.forEach(o=>{
+    if(!o.hit&&overlap(player,{x:o.x+3,y:o.y+3,w:o.w-6,h:o.h-3})){
+      o.hit=true;lives--;livesEl.textContent=lives;
+      player.x=Math.max(0,player.x-35);
+      if(lives<=0){running=false;message.textContent="Game over! Try again to beat your score."}
+    }
+  });
+
+  coins=coins.filter(c=>{
+    const got=overlap(player,{x:c.x-10,y:c.y-10,w:20,h:20});
+    if(got){coinCount++;score+=25;coinsEl.textContent=coinCount;scoreEl.textContent=score}
+    return !got;
+  });
+
+  scoreEl.textContent=score;
+  draw();
+  if(running)raf=requestAnimationFrame(loop);
 }
 
-document.addEventListener("keydown", e => {
-    if (["ArrowLeft","ArrowRight","ArrowUp","Space"].includes(e.code))
-        e.preventDefault();
-    keys[e.code] = true;
-    if (!e.repeat && ["Space","ArrowUp","KeyW"].includes(e.code))
-        jump();
-    if (e.code === "Enter" && (gameOver || won))
-        restartGame();
+function jump(){
+  if(!started){reset();return}
+  if(running&&player.onGround){player.vy=-13;player.onGround=false}
+}
+document.getElementById("restart").addEventListener("click",reset);
+document.getElementById("jump").addEventListener("pointerdown",e=>{e.preventDefault();jump()});
+function holdButton(id,key){
+  const b=document.getElementById(id);
+  b.addEventListener("pointerdown",e=>{e.preventDefault();if(!started)reset();keys[key]=true});
+  ["pointerup","pointercancel","pointerleave"].forEach(evt=>b.addEventListener(evt,()=>keys[key]=false));
+}
+holdButton("left","left");holdButton("right","right");
+window.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();
+  if(e.key==="ArrowLeft")keys.left=true;
+  if(e.key==="ArrowRight")keys.right=true;
+  if(e.key==="ArrowUp"||e.key===" ")jump();
+  if(e.key==="Enter"&&!running)reset();
 });
-
-document.addEventListener("keyup", e => {
-    keys[e.code] = false;
+window.addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft")keys.left=false;
+  if(e.key==="ArrowRight")keys.right=false;
 });
-
-function jump() {
-    if (player && player.grounded && !gameOver && !won) {
-        player.vy = -13;
-        player.grounded = false;
-    }
-}
-
-function overlap(a, b) {
-    return a.x < b.x + b.w &&
-           a.x + a.w > b.x &&
-           a.y < b.y + b.h &&
-           a.y + a.h > b.y;
-}
-
-function update() {
-    if (gameOver || won) return;
-
-    player.vx = 0;
-    if (keys.ArrowRight || keys.KeyD) player.vx = 4.5;
-    if (keys.ArrowLeft || keys.KeyA) player.vx = -4.5;
-
-    player.x += player.vx;
-    player.x = Math.max(0, Math.min(worldWidth - player.w, player.x));
-
-    const oldBottom = player.y + player.h;
-    player.vy += gravity;
-    player.y += player.vy;
-    player.grounded = false;
-
-    for (const p of platforms) {
-        const horizontal = player.x + player.w > p.x &&
-                           player.x < p.x + p.w;
-        if (horizontal && player.vy >= 0 &&
-            oldBottom <= p.y && player.y + player.h >= p.y) {
-            player.y = p.y - player.h;
-            player.vy = 0;
-            player.grounded = true;
-        }
-    }
-
-    // Collect coins
-    for (const coin of coins) {
-        if (!coin.collected &&
-            overlap(player, {x:coin.x-12,y:coin.y-12,w:24,h:24})) {
-            coin.collected = true;
-            score++;
-            scoreText.textContent = score;
-        }
-    }
-
-    // Dangerous spikes
-    const spikes = [
-        {x:285,y:365,w:55,h:25},
-        {x:570,y:325,w:50,h:25},
-        {x:1190,y:345,w:55,h:25},
-        {x:1510,y:305,w:50,h:25},
-        {x:1830,y:260,w:55,h:25},
-        {x:2150,y:335,w:55,h:25}
-    ];
-
-    for (const s of spikes) {
-        if (overlap(player, {
-            x:s.x+7, y:s.y+8, w:s.w-14, h:s.h-8
-        })) {
-            gameOver = true;
-            statusText.textContent =
-                "Oops! Try again. Press Restart Game.";
-        }
-    }
-
-    if (player.y > canvas.height + 120) {
-        gameOver = true;
-        statusText.textContent = "You fell! Press Restart Game to retry.";
-    }
-
-    // Reach the finish flag
-    if (player.x > 2310 && !gameOver) {
-        won = true;
-        statusText.textContent =
-            "🎉 You won! Coins collected: " + score +
-            " out of " + coins.length + ". Press Enter to play again.";
-    }
-
-    cameraX = Math.max(0, Math.min(
-        worldWidth - canvas.width,
-        player.x - canvas.width * 0.35
-    ));
-}
-
-function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // Sky and clouds
-    ctx.fillStyle = "#b8e9ff";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = "#ffffff";
-    for(let i=0;i<8;i++) {
-        let x = ((i*190 - cameraX*0.25) % 1100 + 1100) % 1100 - 80;
-        ctx.beginPath();
-        ctx.arc(x,75,24,0,Math.PI*2);
-        ctx.arc(x+25,65,30,0,Math.PI*2);
-        ctx.arc(x+53,77,22,0,Math.PI*2);
-        ctx.fill();
-    }
-
-    ctx.save();
-    ctx.translate(-cameraX,0);
-
-    // Platforms
-    for(const p of platforms) {
-        ctx.fillStyle = "#603b2a";
-        ctx.fillRect(p.x,p.y,p.w,p.h);
-        ctx.fillStyle = "#23b85a";
-        ctx.fillRect(p.x,p.y,p.w,12);
-    }
-
-    // Spikes
-    const spikes = [
-        {x:285,y:365,w:55,h:25},
-        {x:570,y:325,w:50,h:25},
-        {x:1190,y:345,w:55,h:25},
-        {x:1510,y:305,w:50,h:25},
-        {x:1830,y:260,w:55,h:25},
-        {x:2150,y:335,w:55,h:25}
-    ];
-    for(const s of spikes) {
-        ctx.fillStyle = "#f04455";
-        for(let x=s.x; x<s.x+s.w; x+=18) {
-            ctx.beginPath();
-            ctx.moveTo(x,s.y+s.h);
-            ctx.lineTo(x+9,s.y);
-            ctx.lineTo(x+18,s.y+s.h);
-            ctx.fill();
-        }
-    }
-
-    // Coins
-    for(const c of coins) {
-        if(c.collected) continue;
-        ctx.fillStyle = "#ffbd22";
-        ctx.beginPath();
-        ctx.arc(c.x,c.y,11,0,Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = "#fff3a4";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
-
-    // Finish flag
-    ctx.fillStyle = "#344054";
-    ctx.fillRect(2350,265,6,95);
-    ctx.fillStyle = "#ff4c78";
-    ctx.beginPath();
-    ctx.moveTo(2356,265);
-    ctx.lineTo(2400,280);
-    ctx.lineTo(2356,298);
-    ctx.fill();
-
-    // Ninja character
-    ctx.font = "38px Arial";
-    ctx.textAlign = "left";
-    ctx.fillText("🥷",player.x-4,player.y+36);
-
-    ctx.restore();
-
-    if (gameOver || won) {
-        ctx.fillStyle = "#101827dd";
-        ctx.fillRect(180,155,540,110);
-        ctx.fillStyle = "#ffffff";
-        ctx.textAlign = "center";
-        ctx.font = "bold 27px Arial";
-        ctx.fillText(won ? "LEVEL COMPLETE!" : "GAME OVER",450,200);
-        ctx.font = "17px Arial";
-        ctx.fillText("Press Restart Game to play again",450,233);
-    }
-}
-
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-
-restartGame();
-loop();
+window.addEventListener("blur",()=>{if(keys){keys.left=false;keys.right=false}});
+started=false;running=false;
+player={x:100,y:ground-48,w:34,h:48,vy:0,onGround:true};
+obstacles=[];coins=[];score=0;coinCount=0;lives=3;speed=5;frame=0;keys={left:false,right:false};
+draw();
+message.textContent="Press Start Game to begin!";
+const startBtn=document.createElement("button");
+startBtn.textContent="▶ Start Game";
+startBtn.style.margin="0 0 12px";
+startBtn.addEventListener("click",reset);
+document.querySelector(".game-wrap").insertBefore(startBtn,canvas);
 </script>
 </body>
 </html>
