@@ -281,8 +281,14 @@ function loop(ts){
     if(o.hit)continue;
     if(!overlap(pb,{x:o.x+4,y:o.y+4,w:o.w-8,h:o.h-4}))continue;
     if(boost){
-      o.hit=true;o.x=-999;score+=25;
-      burst(o.x+o.w/2,o.y,"#ffcb35",12);popup(player.x+10,player.y-10,"SMASH +25","#ffcb35");beep(180,.1,"sawtooth",.05,-60);
+     const hitX=o.x+o.w/2,hitY=o.y;
+o.hit=true;
+o.x=-999;
+score+=25;
+burst(hitX,hitY,"#ffcb35",12);
+popup(player.x+10,player.y-10,"SMASH +25","#ffcb35");
+beep(180,.1,"sawtooth",.05,-60);
+      
     }else if(invuln<=0){
       o.hit=true;invuln=1500;shake=14;combo=0;
       if(shieldCount>0){
