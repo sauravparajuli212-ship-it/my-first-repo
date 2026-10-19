@@ -154,7 +154,7 @@ function saveProgress() {
 }
 
 function updateStats() {
-  $("score").textContent = score;
+  $("score").textContent = Math.floor(score);
   $("level").textContent = currentLevel;
   $("coins").textContent = wallet;
   $("lives").textContent = lives;
