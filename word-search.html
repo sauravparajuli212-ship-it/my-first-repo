@@ -235,6 +235,9 @@ document.getElementById("hintBtn").addEventListener("click",()=>{
 });
 document.getElementById("homeBtn").addEventListener("click",()=>location.href="index.html");
 makePuzzle();
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+
 </script>
 </body>
 </html>
