@@ -7,35 +7,35 @@
 <title>Word Search | PlayZone</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#101426;color:white;text-align:center}
-header{padding:20px;background:#191f38;border-bottom:2px solid #745cff}
-header h1{margin:0;color:#a995ff}
-header p{color:#c5c9dc}
-main{max-width:900px;margin:auto;padding:18px}
-.stats{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:18px 0}
-.stat{background:#202945;padding:12px 20px;border-radius:12px}
-.stat strong{display:block;font-size:22px;color:#a995ff;margin-top:5px}
-button{cursor:pointer;border:0;border-radius:9px;padding:11px 15px;font-weight:bold}
+body{margin:0;background:#101426;color:#fff;font-family:Arial,sans-serif;text-align:center}
+header{padding:22px 12px;background:#191f38;border-bottom:2px solid #745cff}
+h1{margin:0;color:#b4a3ff;font-size:clamp(26px,5vw,38px)}
+header p{color:#c5c9dc;margin-bottom:0}
+main{max-width:850px;margin:auto;padding:16px}
+.stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:16px 0}
+.stat{background:#202945;padding:12px 20px;border-radius:12px;min-width:95px}
+.stat strong{display:block;font-size:22px;color:#b4a3ff;margin-top:5px}
+#words{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px auto}
+.word{background:#202945;padding:9px 12px;border-radius:8px;font-weight:bold;letter-spacing:1px}
+.word.found{background:#176c54;color:#c5ffe7;text-decoration:line-through}
+#board{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;width:min(100%,500px);margin:18px auto;user-select:none;-webkit-user-select:none;touch-action:none}
+.cell{aspect-ratio:1;min-width:0;padding:0;display:flex;align-items:center;justify-content:center;background:#222b49;border:1px solid #354064;border-radius:5px;color:white;font-size:clamp(12px,3.6vw,21px);font-weight:bold;cursor:pointer;touch-action:none}
+.cell.selected{background:#6c55e8;border-color:#b6a5ff}
+.cell.found-cell{background:#147a5a;border-color:#45d6a4;color:white}
+button{border:0;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}
+.cell:focus-visible,button:focus-visible{outline:2px solid #ffe680;outline-offset:2px}
 .primary{background:#8067ff;color:white}
 .secondary{background:#303a59;color:white}
-#words{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:18px auto;max-width:600px}
-.word{background:#202945;padding:9px 12px;border-radius:8px;font-weight:bold;letter-spacing:1px}
-.word.found{background:#176c54;color:#baffdf;text-decoration:line-through}
-#board{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;max-width:520px;margin:20px auto;touch-action:pan-y;user-select:none}
-.cell{aspect-ratio:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#222b49;border:1px solid #354064;border-radius:5px;font-size:clamp(12px,3.4vw,21px);font-weight:bold;cursor:pointer;color:white;padding:0}
-.cell.selected{background:#6c55e8}
-.cell.found-cell{background:#147a5a;color:white;border-color:#45d6a4}
-.cell:focus-visible,button:focus-visible{outline:3px solid #ffe680;outline-offset:2px}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0}
 #message{min-height:28px;color:#a9f5d2;font-weight:bold}
-.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.hint{font-size:14px;line-height:1.6;color:#bfc6df}
-@media(max-width:450px){main{padding:10px}#board{gap:2px}.cell{border-radius:3px}.stat{padding:10px 14px}}
+.hint{color:#bfc6df;font-size:14px;line-height:1.5}
+@media(max-width:420px){main{padding:8px}#board{gap:2px}.cell{border-radius:3px}.stat{padding:10px 13px;min-width:85px}}
 </style>
 </head>
 <body>
 <header>
 <h1>🔤 Word Search</h1>
-<p>Find every hidden word in the letter grid!</p>
+<p>Find hidden words. Beat your score. Have fun!</p>
 </header>
 <main>
 <div class="stats">
@@ -43,139 +43,323 @@ button{cursor:pointer;border:0;border-radius:9px;padding:11px 15px;font-weight:b
 <div class="stat">Found<strong id="progress">0 / 8</strong></div>
 <div class="stat">Time<strong id="time">00:00</strong></div>
 </div>
+
 <h2>Words to Find</h2>
 <div id="words"></div>
 <div id="board" aria-label="Word search letter grid"></div>
-<p id="message" aria-live="polite">Select the first letter, then the last letter of a word.</p>
+<p id="message" aria-live="polite">Hold and drag across letters to find a word!</p>
 <p class="hint">Words can go horizontally, vertically, or diagonally, forwards or backwards.</p>
+
 <div class="actions">
 <button class="primary" id="newGame">🔄 New Puzzle</button>
 <button class="secondary" id="hintBtn">💡 Hint</button>
 <button class="secondary" id="homeBtn">🏠 PlayZone Home</button>
 </div>
 </main>
+
 <script>
-const SIZE=10;
-const WORDS=["NINJA","GAMING","PUZZLE","ROCKET","PLANET","CASTLE","DRAGON","PLAYER"];
-const boardEl=document.getElementById("board");
-const wordsEl=document.getElementById("words");
-const scoreEl=document.getElementById("score");
-const progressEl=document.getElementById("progress");
-const timeEl=document.getElementById("time");
-const messageEl=document.getElementById("message");
-let grid=[],placements={},found=new Set(),first=null,score=0,seconds=0,timer=null,finished=false;
+"use strict";
 
-function makePuzzle(){
- clearInterval(timer);grid=Array.from({length:SIZE},()=>Array(SIZE).fill(""));
- placements={};found=new Set();first=null;score=0;seconds=0;finished=false;
- timeEl.textContent="00:00";
- const directions=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
- for(const word of WORDS){
-  let placed=false;
-  for(let attempt=0;attempt<500&&!placed;attempt++){
-   const [dr,dc]=directions[Math.floor(Math.random()*directions.length)];
-   const r=Math.floor(Math.random()*SIZE),c=Math.floor(Math.random()*SIZE);
-   const er=r+dr*(word.length-1),ec=c+dc*(word.length-1);
-   if(er<0||er>=SIZE||ec<0||ec>=SIZE)continue;
-   let ok=true;
-   for(let i=0;i<word.length;i++){
-    const existing=grid[r+dr*i][c+dc*i];
-    if(existing&&existing!==word[i]){ok=false;break}
-   }
-   if(!ok)continue;
-   const cells=[];
-   for(let i=0;i<word.length;i++){
-    const rr=r+dr*i,cc=c+dc*i;
-    grid[rr][cc]=word[i];cells.push(rr*SIZE+cc);
-   }
-   placements[word]=cells;placed=true;
+const SIZE = 10;
+const WORDS = ["NINJA","GAMING","PUZZLE","ROCKET","PLANET","CASTLE","DRAGON","PLAYER"];
+
+const boardEl = document.getElementById("board");
+const wordsEl = document.getElementById("words");
+const scoreEl = document.getElementById("score");
+const progressEl = document.getElementById("progress");
+const timeEl = document.getElementById("time");
+const messageEl = document.getElementById("message");
+
+let grid = [];
+let placements = {};
+let found = new Set();
+let score = 0;
+let seconds = 0;
+let timer = null;
+let finished = false;
+let dragStart = null;
+let dragEnd = null;
+let isDragging = false;
+let pointerId = null;
+let lastPath = [];
+
+function makePuzzle() {
+  clearInterval(timer);
+
+  grid = Array.from({length: SIZE}, () => Array(SIZE).fill(""));
+  placements = {};
+  found = new Set();
+  score = 0;
+  seconds = 0;
+  finished = false;
+  dragStart = null;
+  dragEnd = null;
+  isDragging = false;
+  pointerId = null;
+  lastPath = [];
+  timeEl.textContent = "00:00";
+
+  const directions = [
+    [0,1],[1,0],[1,1],[-1,1],
+    [0,-1],[-1,0],[-1,-1],[1,-1]
+  ];
+
+  for (const word of WORDS) {
+    let placed = false;
+
+    for (let attempt = 0; attempt < 1000 && !placed; attempt++) {
+      const [dr, dc] = directions[Math.floor(Math.random() * directions.length)];
+      const r = Math.floor(Math.random() * SIZE);
+      const c = Math.floor(Math.random() * SIZE);
+      const er = r + dr * (word.length - 1);
+      const ec = c + dc * (word.length - 1);
+
+      if (er < 0 || er >= SIZE || ec < 0 || ec >= SIZE) continue;
+
+      let ok = true;
+      for (let i = 0; i < word.length; i++) {
+        const existing = grid[r + dr * i][c + dc * i];
+        if (existing && existing !== word[i]) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (!ok) continue;
+
+      const cells = [];
+      for (let i = 0; i < word.length; i++) {
+        const rr = r + dr * i;
+        const cc = c + dc * i;
+        grid[rr][cc] = word[i];
+        cells.push(rr * SIZE + cc);
+      }
+
+      placements[word] = cells;
+      placed = true;
+    }
   }
- }
- for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-  if(!grid[r][c])grid[r][c]="ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random()*26)];
- }
- render();
- messageEl.textContent="Find the 8 hidden words. Good luck!";
- timer=setInterval(()=>{if(!finished){seconds++;timeEl.textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}},1000);
-}
 
-function render(){
- boardEl.innerHTML="";
- grid.forEach((row,r)=>row.forEach((letter,c)=>{
-  const cell=document.createElement("button");
-  cell.className="cell";cell.textContent=letter;cell.type="button";
-  cell.dataset.index=r*SIZE+c;
-  cell.setAttribute("aria-label",letter+" row "+(r+1)+" column "+(c+1));
-  cell.addEventListener("click",()=>chooseCell(r*SIZE+c));
-  boardEl.appendChild(cell);
- }));
- wordsEl.innerHTML="";
- WORDS.forEach(word=>{
-  const el=document.createElement("span");
-  el.className="word"+(found.has(word)?" found":"");
-  el.textContent=word;wordsEl.appendChild(el);
- });
- updateStats();paintFound();
-}
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (!grid[r][c]) {
+        grid[r][c] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+      }
+    }
+  }
 
-function chooseCell(index){
- if(finished)return;
- if(first===null){
-  first=index;paintSelection([index]);messageEl.textContent="Now select the last letter of the word.";
-  return;
- }
- const path=getPath(first,index);
- if(!path){first=index;paintSelection([index]);messageEl.textContent="Choose a straight line. Now select its last letter.";return}
- const selected=path.map(i=>grid[Math.floor(i/SIZE)][i%SIZE]).join("");
- const reverse=selected.split("").reverse().join("");
- const word=WORDS.find(w=>(w===selected||w===reverse)&&!found.has(w));
- if(word){
-  found.add(word);score+=word.length*10;
-  messageEl.textContent="✅ Found "+word+"! +"+(word.length*10)+" points";
-  if(found.size===WORDS.length){finished=true;clearInterval(timer);messageEl.textContent="🏆 Amazing! You found every word in "+timeEl.textContent+"!";score+=100}
   render();
- }else{
-  messageEl.textContent="Not a hidden word. Try again!";
- }
- first=null;paintSelection([]);
+  messageEl.textContent = "Hold and drag across letters to find a word!";
+
+  timer = setInterval(() => {
+    if (!finished) {
+      seconds++;
+      timeEl.textContent =
+        String(Math.floor(seconds / 60)).padStart(2, "0") + ":" +
+        String(seconds % 60).padStart(2, "0");
+    }
+  }, 1000);
 }
 
-function getPath(a,b){
- const ar=Math.floor(a/SIZE),ac=a%SIZE,br=Math.floor(b/SIZE),bc=b%SIZE;
- const dr=br-ar,dc=bc-ac;
- if(dr!==0&&dc!==0&&Math.abs(dr)!==Math.abs(dc))return null;
- const steps=Math.max(Math.abs(dr),Math.abs(dc));
- if(steps===0)return [a];
- const sr=Math.sign(dr),sc=Math.sign(dc),path=[];
- for(let i=0;i<=steps;i++)path.push((ar+sr*i)*SIZE+ac+sc*i);
- return path;
+function render() {
+  boardEl.innerHTML = "";
+
+  grid.forEach((row, r) => {
+    row.forEach((letter, c) => {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cell";
+      cell.textContent = letter;
+      cell.dataset.index = r * SIZE + c;
+      cell.setAttribute("aria-label",
+        letter + ", row " + (r + 1) + ", column " + (c + 1));
+
+      cell.addEventListener("pointerdown", event => {
+        if (finished || event.button !== 0 && event.pointerType === "mouse") return;
+        event.preventDefault();
+        startDrag(r * SIZE + c, event.pointerId);
+      });
+
+      cell.addEventListener("pointerenter", event => {
+        if (isDragging && event.pointerId === pointerId) {
+          moveDrag(r * SIZE + c);
+        }
+      });
+
+      cell.addEventListener("click", event => {
+        // Allows keyboard activation, without double-processing pointer clicks.
+        if (event.detail === 0 && !finished) chooseByKeyboard(r * SIZE + c);
+      });
+
+      boardEl.appendChild(cell);
+    });
+  });
+
+  wordsEl.innerHTML = "";
+  WORDS.forEach(word => {
+    const el = document.createElement("span");
+    el.className = "word" + (found.has(word) ? " found" : "");
+    el.textContent = word;
+    wordsEl.appendChild(el);
+  });
+
+  updateStats();
+  paintFound();
 }
 
-function paintSelection(indices){
- document.querySelectorAll(".cell").forEach(el=>el.classList.remove("selected"));
- indices.forEach(i=>boardEl.children[i]?.classList.add("selected"));
- if(first!==null)boardEl.children[first]?.classList.add("selected");
+function getPath(a, b) {
+  const ar = Math.floor(a / SIZE), ac = a % SIZE;
+  const br = Math.floor(b / SIZE), bc = b % SIZE;
+  const dr = br - ar, dc = bc - ac;
+
+  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return null;
+
+  const steps = Math.max(Math.abs(dr), Math.abs(dc));
+  const sr = Math.sign(dr), sc = Math.sign(dc);
+  const path = [];
+
+  for (let i = 0; i <= steps; i++) {
+    path.push((ar + sr * i) * SIZE + ac + sc * i);
+  }
+
+  return path;
 }
 
-function paintFound(){
- for(const word of found){
-  for(const i of placements[word]||[])boardEl.children[i]?.classList.add("found-cell");
- }
+function startDrag(index, id) {
+  if (finished) return;
+
+  isDragging = true;
+  pointerId = id;
+  dragStart = index;
+  dragEnd = index;
+  lastPath = [index];
+  paintSelection(lastPath);
 }
 
-function updateStats(){
- scoreEl.textContent=score;progressEl.textContent=found.size+" / "+WORDS.length;
+function moveDrag(index) {
+  if (!isDragging || finished) return;
+
+  const path = getPath(dragStart, index);
+  if (!path) {
+    dragEnd = index;
+    lastPath = [dragStart, index];
+  } else {
+    dragEnd = index;
+    lastPath = path;
+  }
+
+  paintSelection(lastPath);
 }
 
-document.getElementById("newGame").addEventListener("click",makePuzzle);
-document.getElementById("hintBtn").addEventListener("click",()=>{
- if(finished)return;
- const word=WORDS.find(w=>!found.has(w));
- if(!word){messageEl.textContent="All words found!";return}
- const cell=placements[word][0];first=null;paintSelection([cell]);
- messageEl.textContent="💡 Look for "+word+". Its first letter is highlighted!";
+function endDrag(event) {
+  if (!isDragging) return;
+  if (event && pointerId !== null && event.pointerId !== pointerId) return;
+
+  isDragging = false;
+  pointerId = null;
+
+  const start = dragStart;
+  const end = dragEnd;
+
+  dragStart = null;
+  dragEnd = null;
+  lastPath = [];
+
+  if (start !== null && end !== null) {
+    checkWord(start, end);
+  }
+}
+
+function checkWord(start, end) {
+  const path = getPath(start, end);
+
+  if (!path) {
+    messageEl.textContent = "Choose a straight line!";
+    paintSelection([]);
+    return;
+  }
+
+  const selected = path.map(i => grid[Math.floor(i / SIZE)][i % SIZE]).join("");
+  const reverse = selected.split("").reverse().join("");
+  const word = WORDS.find(w =>
+    (w === selected || w === reverse) && !found.has(w)
+  );
+
+  if (!word) {
+    messageEl.textContent = "Not a hidden word. Try again!";
+    paintSelection([]);
+    return;
+  }
+
+  found.add(word);
+  score += word.length * 10;
+  messageEl.textContent = "✅ Found " + word + "! +" + word.length * 10 + " points";
+
+  if (found.size === WORDS.length) {
+    finished = true;
+    clearInterval(timer);
+    score += 100;
+    messageEl.textContent =
+      "🏆 Amazing! All words found in " + timeEl.textContent + "! Bonus +100!";
+  }
+
+  render();
+}
+
+function chooseByKeyboard(index) {
+  if (dragStart === null) {
+    dragStart = index;
+    messageEl.textContent = "Now activate the last letter.";
+  } else {
+    const start = dragStart;
+    dragStart = null;
+    checkWord(start, index);
+  }
+}
+
+function paintSelection(indices) {
+  document.querySelectorAll(".cell").forEach(cell => cell.classList.remove("selected"));
+  indices.forEach(i => {
+    if (boardEl.children[i]) boardEl.children[i].classList.add("selected");
+  });
+}
+
+function paintFound() {
+  for (const word of found) {
+    for (const i of placements[word] || []) {
+      if (boardEl.children[i]) boardEl.children[i].classList.add("found-cell");
+    }
+  }
+}
+
+function updateStats() {
+  scoreEl.textContent = score;
+  progressEl.textContent = found.size + " / " + WORDS.length;
+}
+
+boardEl.addEventListener("pointerup", endDrag);
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+
+document.getElementById("newGame").addEventListener("click", makePuzzle);
+
+document.getElementById("hintBtn").addEventListener("click", () => {
+  if (finished) return;
+
+  const word = WORDS.find(w => !found.has(w));
+  if (!word) {
+    messageEl.textContent = "All words found!";
+    return;
+  }
+
+  paintSelection([placements[word][0]]);
+  messageEl.textContent = "💡 Find " + word + ". Its first letter is highlighted!";
 });
-document.getElementById("homeBtn").addEventListener("click",()=>location.href="index.html");
+
+document.getElementById("homeBtn").addEventListener("click", () => {
+  location.href = "index.html";
+});
+
 makePuzzle();
 </script>
 </body>
