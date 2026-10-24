@@ -287,57 +287,31 @@ function paint(){
   });
 }
 
+
 function cellAtPoint(e){
-  const el = document.elementFromPoint(e.clientX,e.clientY);
-  return el && el.classList && el.classList.contains("cell") ? el : null;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  return el && el.closest ? el.closest(".cell") : null;
 }
 
-function begin(e){
-  if(e.pointerType === "mouse" && e.button !== 0) return;
-
-  const cell = e.target.closest(".cell");
-  if(!cell || !board.contains(cell)) return;
-
-  e.preventDefault();
+function beginAt(cell){
+  if(!cell) return;
   startTimer();
   clearHint();
-
   dragging = true;
-  activePointer = e.pointerId;
-  start = {r:+cell.dataset.r,c:+cell.dataset.c};
+  start = {r:+cell.dataset.r, c:+cell.dataset.c};
   end = {...start};
   paint();
-
-  // Capture pointer events on the board for reliable touch dragging.
-  try{
-    board.setPointerCapture(e.pointerId);
-  }catch(_){}
 }
 
-function move(e){
-  if(!dragging || e.pointerId !== activePointer) return;
-  e.preventDefault();
-
-  const cell = cellAtPoint(e);
-  if(!cell) return;
-
-  end = {r:+cell.dataset.r,c:+cell.dataset.c};
+function moveTo(cell){
+  if(!dragging || !cell || !board.contains(cell)) return;
+  end = {r:+cell.dataset.r, c:+cell.dataset.c};
   paint();
 }
 
-function finish(e){
+function finishSelection(){
   if(!dragging) return;
-
-  if(e && e.pointerId !== undefined &&
-     activePointer !== null && e.pointerId !== activePointer) return;
-
-  if(e){
-    const cell = cellAtPoint(e);
-    if(cell) end = {r:+cell.dataset.r,c:+cell.dataset.c};
-  }
-
   dragging = false;
-  activePointer = null;
 
   if(!start || !end){
     clearSelection();
@@ -350,7 +324,6 @@ function finish(e){
 
   for(const w of WORDS){
     if(found.has(w)) continue;
-
     const target = placements[w].map(posKey);
     if(keys.join("|") === target.join("|") ||
        keys.join("|") === [...target].reverse().join("|")){
@@ -370,21 +343,72 @@ function finish(e){
       if(el) el.classList.add("found");
     });
 
-    document.getElementById("word-"+matched).classList.add("done");
-    message.textContent = `✅ Great job! You found ${matched}!`;
+    document.getElementById("word-" + matched).classList.add("done");
+    message.textContent = "✅ Great job! You found " + matched + "!";
     updateStats();
 
     if(found.size === WORDS.length){
       stopTimer();
-      message.textContent = `🏆 Amazing! All words found in ${timerEl.textContent}!`;
+      message.textContent = "🏆 Amazing! You found every word!";
     }
-  }else{
+  } else {
     message.textContent = "Keep trying! Drag from the first letter to the last.";
   }
 
   clearSelection();
   start = end = null;
 }
+
+// PC: mouse and other pointer input
+board.addEventListener("pointerdown", e => {
+  if(e.pointerType === "touch") return;
+  if(e.pointerType === "mouse" && e.button !== 0) return;
+  const cell = e.target.closest(".cell");
+  if(!cell) return;
+  e.preventDefault();
+  beginAt(cell);
+});
+
+board.addEventListener("pointermove", e => {
+  if(e.pointerType === "touch" || !dragging) return;
+  e.preventDefault();
+  moveTo(cellAtPoint(e));
+});
+
+document.addEventListener("pointerup", e => {
+  if(e.pointerType !== "touch" && dragging) finishSelection();
+});
+
+// Phone: explicit touch events
+board.addEventListener("touchstart", e => {
+  const cell = e.target.closest(".cell");
+  if(!cell) return;
+  e.preventDefault();
+  beginAt(cell);
+}, {passive:false});
+
+board.addEventListener("touchmove", e => {
+  if(!dragging) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  if(!touch) return;
+  moveTo(cellAtPoint(touch));
+}, {passive:false});
+
+board.addEventListener("touchend", e => {
+  if(!dragging) return;
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  if(touch) moveTo(cellAtPoint(touch));
+  finishSelection();
+}, {passive:false});
+
+board.addEventListener("touchcancel", () => {
+  dragging = false;
+  start = end = null;
+  clearSelection();
+}, {passive:true});
+
 
 function showHint(){
   clearHint();
