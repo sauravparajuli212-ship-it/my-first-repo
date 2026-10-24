@@ -1,25 +1,27 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-   <title>PlayZone - Free Online Browser Games</title>
-    <meta name="description" content="Play free online browser games on PlayZone! Enjoy action, adventure, and casual games on your PC or mobile.">
+    <title>PlayZone - Free Online Browser Games</title>
+    <meta name="description" content="Play free online browser games on PlayZone! Enjoy action, racing, sports, and puzzle games on your PC or mobile.">
     <meta name="robots" content="index, follow">
 
     <meta property="og:title" content="PlayZone - Free Online Games">
     <meta property="og:description" content="Play fun free browser games on your PC or mobile with PlayZone.">
     <meta property="og:url" content="https://sauravparajuli212-ship-it.github.io/my-first-repo/">
     <meta property="og:type" content="website">
-</head>
-
+    <meta name="theme-color" content="#6842ff">
 
     <style>
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -44,6 +46,7 @@
             font-size: 28px;
             font-weight: 900;
             color: #6842ff;
+            text-decoration: none;
         }
 
         .logo span {
@@ -76,6 +79,7 @@
         .hero p {
             margin: 0;
             font-size: 17px;
+            line-height: 1.6;
         }
 
         main {
@@ -118,10 +122,10 @@
         }
 
         .game {
+            min-width: 0;
             background: white;
             border-radius: 18px;
             padding: 12px;
-            cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 3px 12px #2023380a;
         }
@@ -145,8 +149,9 @@
 
         .game p {
             color: #777b90;
-            margin: 5px 4px 8px;
+            margin: 8px 4px;
             font-size: 14px;
+            line-height: 1.5;
         }
 
         .play {
@@ -160,15 +165,13 @@
             border-radius: 10px;
             font-size: 15px;
             font-weight: bold;
+            text-align: center;
+            text-decoration: none;
             cursor: pointer;
         }
 
-        footer {
-            text-align: center;
-            padding: 30px;
-            margin-top: 40px;
-            background: white;
-            color: #777b90;
+        .play:hover {
+            background: #5030dc;
         }
 
         #message {
@@ -178,14 +181,86 @@
             border-radius: 12px;
             background: white;
         }
+
+        #about {
+            margin-top: 45px;
+            padding: 25px;
+            border-radius: 16px;
+            background: white;
+            line-height: 1.7;
+        }
+
+        #about h2 {
+            margin-top: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 16px;
+            margin-top: 40px;
+            background: white;
+            color: #777b90;
+            line-height: 1.8;
+        }
+
+        footer a {
+            color: #6842ff;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 500px) {
+            header {
+                padding: 16px 5%;
+            }
+
+            #search {
+                width: 100%;
+            }
+
+            .hero {
+                padding: 30px 18px;
+            }
+
+            main {
+                width: 92%;
+            }
+
+            .games {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .art {
+                height: 115px;
+                font-size: 52px;
+            }
+
+            .game {
+                padding: 9px;
+            }
+
+            .category {
+                padding: 10px 13px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
     <header>
-        <div class="logo">Play<span>Zone</span> 🎮</div>
-        <input id="search" type="search" placeholder="🔍 Search games...">
+        <a class="logo" href="index.html">Play<span>Zone</span> 🎮</a>
+        <input
+            id="search"
+            type="search"
+            placeholder="🔍 Search games..."
+            aria-label="Search games"
+        >
     </header>
 
     <section class="hero">
@@ -193,8 +268,8 @@
         <p>Discover your next favorite game.</p>
     </section>
 
-      main>
-        <div class="categories">
+    <main>
+        <div class="categories" aria-label="Game categories">
             <button class="category active" data-category="All">🔥 All Games</button>
             <button class="category" data-category="Action">⚔️ Action</button>
             <button class="category" data-category="Racing">🏎️ Racing</button>
@@ -208,56 +283,56 @@
 
             <article class="game" data-name="Speed Racer" data-category="Racing">
                 <div class="art" style="background:#ffe0cf">🏎️</div>
-               <p>Race at top speed, avoid obstacles, and challenge yourself to beat your best score in this thrilling racing game!</p>
-                <p>Racing</p>
-                <a class="play" href="speed.html" style="text-align:center; text-decoration:none;">Play Now ▶</a>
+                <h3>Speed Racer</h3>
+                <p>Race at top speed, avoid obstacles, and challenge yourself to beat your best score!</p>
+                <a class="play" href="speed.html">Play Now ▶</a>
             </article>
 
-           
-     
-<article class="game" data-name="Ninja Quest" data-category="Action">
-    <div class="art" style="background:#e4ddff">🥷</div>
-    <h3>Ninja Quest</h3>
-    <p>Become a fearless ninja, dodge obstacles, and test your skills in this exciting action game!</p>
-    <a class="play" href="ninja.html" style="text-align:center;text-decoration:none;">
-        Play Now ▶
-    </a>
-</article>
+            <article class="game" data-name="Ninja Quest" data-category="Action">
+                <div class="art" style="background:#e4ddff">🥷</div>
+                <h3>Ninja Quest</h3>
+                <p>Become a fearless ninja, dodge obstacles, and test your skills in this action game!</p>
+                <a class="play" href="ninja.html">Play Now ▶</a>
+            </article>
 
-<article class="game" data-name="Penalty King" data-category="Sports">
-    <div class="art" style="background:#d7ffe5">⚽</div>
-    <h3>Penalty King</h3>
-    <p>Beat the goalkeeper and score amazing penalty goals!</p>
-    <p>Sports</p>
-    <a class="play" href="penalty-king.html" style="text-align:center;text-decoration:none;">
-        Play Now ▶
-    </a>
-</article>
+            <article class="game" data-name="Penalty King" data-category="Sports">
+                <div class="art" style="background:#d7ffe5">⚽</div>
+                <h3>Penalty King</h3>
+                <p>Take your shot, beat the goalkeeper, and score amazing penalty goals!</p>
+                <a class="play" href="penalty-king.html">Play Now ▶</a>
+            </article>
 
-<article class="game" data-name="Word Search" data-category="Puzzle">
-    <div class="art" style="background:#e4ddff">🔤</div>
-    <h3>Word Search</h3>
-    <p>Find hidden words in a grid full of letters. Challenge your brain!</p>
-    <a class="play" href="word-search.html"
-       style="text-align:center;text-decoration:none;">
-        Play Now ▶
-    </a>
-</article>
-
-</article>
-     
-
-           
-          
+            <article class="game" data-name="Word Search" data-category="Puzzle">
+                <div class="art" style="background:#e4ddff">🔤</div>
+                <h3>Word Search</h3>
+                <p>Find hidden words in a grid full of letters. Challenge your brain!</p>
+                <a class="play" href="word-search.html">Play Now ▶</a>
+            </article>
 
         </div>
 
-        <div id="message"></div>
+        <div id="message" role="status"></div>
+
+        <section id="about">
+            <h2>About PlayZone</h2>
+            <p>
+                Welcome to PlayZone, your place for fun and exciting browser games!
+                Play original games like Ninja Quest, Speed Racer, Penalty King,
+                and Word Search. Challenge your skills and enjoy gaming directly
+                from your browser on supported devices.
+            </p>
+        </section>
     </main>
 
     <footer>
-        © 2026 PlayZone • Made for game lovers 💜
-    <p><a href="privacy-policy.html">Privacy Policy</a></p>
+        <p>© 2026 PlayZone • Made for game lovers 💜</p>
+        <p>
+            <a href="privacy-policy.html">Privacy Policy</a>
+            |
+            <a href="contact.html">Contact</a>
+            |
+            <a href="#about">About</a>
+        </p>
     </footer>
 
     <script>
@@ -269,11 +344,11 @@
         let selectedCategory = "All";
 
         function filterGames() {
-            const query = search.value.toLowerCase();
+            const query = search.value.trim().toLowerCase();
             let visibleCount = 0;
 
             games.forEach(game => {
-                const name = game.dataset.name.toLowerCase();
+                const name = (game.dataset.name || "").toLowerCase();
                 const category = game.dataset.category;
 
                 const matchesSearch = name.includes(query);
@@ -282,6 +357,7 @@
                     category === selectedCategory;
 
                 const show = matchesSearch && matchesCategory;
+
                 game.style.display = show ? "" : "none";
 
                 if (show) visibleCount++;
@@ -306,26 +382,7 @@
                 filterGames();
             });
         });
-
-        document.querySelectorAll(".play").forEach(button => {
-            button.addEventListener("click", () => {
-                const game = button.closest(".game");
-                message.style.display = "block";
-                message.textContent =
-                    game.dataset.name +
-                    " is on our game list! We'll add playable games next.";
-                message.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            });
-        });
     </script>
 
-
-<section id="about">
-  <h2>About PlayZone</h2>
-  <p>
-    Welcome to PlayZone, your place for fun and exciting browser games!
-    Play games like Ninja Quest and Speed Racer, challenge your skills,
-    and enjoy gaming directly from your browser.
-  </p>
-</section></body>
+</body>
 </html>
