@@ -1,26 +1,85 @@
- <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Contact PlayZone for questions, feedback, and game bug reports.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact PlayZone with feedback, browser game bugs, or ideas for improvements.">
   <title>Contact PlayZone</title>
   <style>
-    body{margin:0;padding:24px;font-family:Arial,sans-serif;background:#101326;color:#f5f7ff;line-height:1.7}
-    main{max-width:650px;margin:40px auto;background:#1a203b;padding:24px;border-radius:16px}
-    a{color:#a99fff}
-    .btn{display:inline-block;background:#7868f6;color:white;padding:10px 16px;border-radius:8px;text-decoration:none}
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f3ff;
+      color: #24213b;
+      font-family: Arial, sans-serif;
+      line-height: 1.7;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 680px;
+      padding: 36px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(45, 30, 90, 0.09);
+    }
+
+    h1 { color: #6d42d8; margin-top: 0; }
+    h2 { margin-top: 28px; }
+
+    a { color: #6540c8; }
+    .email {
+      display: inline-block;
+      overflow-wrap: anywhere;
+      font-weight: bold;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 10px 18px;
+      background: #6d42d8;
+      color: white;
+      border-radius: 10px;
+      text-decoration: none;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 24px; }
+    }
   </style>
 </head>
 <body>
-  <main>
+  <main class="card">
     <h1>Contact PlayZone</h1>
-    <p>Thanks for visiting PlayZone! We welcome feedback about our original browser games, website issues, and ideas for improvements.</p>
+
+    <p>
+      Thanks for visiting PlayZone! We welcome feedback about our
+      original browser games, website issues, and ideas for improvements.
+    </p>
+
     <h2>Get in touch</h2>
+
     <p>For questions or to report a game bug, email:</p>
-    <p><strong>sauravparajuli212@gmail.com</strong></p>
-    <p>Please replace the placeholder with an email address you can safely use for website inquiries. Don't publish your personal phone number or home address.</p>
-    <p><a class="btn" href="index.html">Back to PlayZone</a></p>
+
+    <p>
+      <a class="email"
+         href="mailto:sauravparajuli212@gmail.com">
+        sauravparajuli212@gmail.com
+      </a>
+    </p>
+
+    <a class="back"
+       href="https://sauravparajuli212-ship-it.github.io/my-first-repo/">
+      ← Back to PlayZone
+    </a>
   </main>
 </body>
 </html>
